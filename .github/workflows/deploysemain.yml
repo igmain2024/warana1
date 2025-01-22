@@ -1,0 +1,41 @@
+name: Deploy to S3 and Invalidate CloudFront Cache
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # Install AWS CLI
+    - name: Install AWS CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y awscli
+
+    # Deploy files to S3
+    - name: Sync Files to S3
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: us-east-1 # Change if needed
+      run: |
+        aws s3 sync ./ s3://myterraformprojectwebsite2023ilhan --delete
+
+    # Create CloudFront cache invalidation
+    - name: Invalidate CloudFront Cache
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: us-east-1 # Change if needed
+      run: |
+        aws cloudfront create-invalidation \
+          --distribution-id E1AJ455479SFUA \
+          --paths "/*"
